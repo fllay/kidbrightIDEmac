@@ -1,8 +1,10 @@
 //process.env.NODE_ENV = process.env.NODE_ENV || 'production';
 const {
     app,
-    BrowserWindow
+    BrowserWindow,
+    dialog
 } = require('electron')
+
 const ProgressBar = require('electron-progressbar');
 const url = require('url')
 const path = require('path')
@@ -15,12 +17,18 @@ app.console = new console.Console(process.stdout, process.stderr);
 console.log("PATH = ")
 console.log(__dirname + "/esp32/lib/release")
 const pp = __dirname + "/esp32/lib/release"
-const serverPath = __dirname + '/kidbrightide'
-
+if(process.platform == "darwin"){
+    serverPath = __dirname + '/kidbrightide'
+} else if(process.platform == "win32"){
+    serverPath = __dirname + '/kidbrightide.exe'
+} else {
+    serverPath = __dirname + '/kidbrightide'
+}
 console.log("PATH = ")
 console.log(pp + '/common.mk')
 console.log("Server path = ")
 console.log(serverPath)
+
 
 
  
@@ -49,15 +57,13 @@ child.stdout.on('data', (data) => {
             progressBar.detail = data;
         }*/
     }
+
+
+
     if (data.match(/(webserver listening on port)/)) {
         progressBar.setCompleted();
         //splash.destroy();
         console.log("Server is up");
-        win = new BrowserWindow({
-            webPreferences: {
-                nodeIntegration: false
-            }, icon: path.join(__dirname, 'assets/icons/png/Icon-64.png')
-        })
 
        /* fs.readFile(pp + '/common.mk', 'utf8', function (err, data) {
             if (err) {
@@ -99,13 +105,27 @@ child.stdout.on('data', (data) => {
     
 
     } else {
-      
+        
     }
 
 });
 
 child.stderr.on('data', (data) => {
     console.error(`child stderr:\n${data}`);
+    if(data.match(/(EADDRINUSE)/)){
+        if(progressBar != null){
+            progressBar.setCompleted();
+            dialog.showMessageBox(win, {
+                type: "info",
+                buttons: ["Dismiss"],
+                title: "Error",
+                message: "Error",
+                detail: data
+            }, resp => {
+                
+            })
+        }
+    }
 });
 
 
@@ -114,6 +134,11 @@ child.stderr.on('data', (data) => {
 
 app.on('ready', () => {
     //splash = new BrowserWindow({width: 810, height: 610, transparent: true, frame: false, alwaysOnTop: true});
+    win = new BrowserWindow({
+        webPreferences: {
+            nodeIntegration: false
+        }, icon: path.join(__dirname, 'assets/icons/png/Icon-64.png')
+    })
 
     //splash.loadURL(`file://${__dirname}/splash.html`);
 	progressBar = new ProgressBar({
