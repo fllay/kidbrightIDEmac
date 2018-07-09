@@ -168,3 +168,7 @@ app.on('before-quit', function () {
     child.kill()
 
 });
+app.on("window-all-closed", () => {
+    child.kill()
+    app.exit()
+})
